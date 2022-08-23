@@ -2,6 +2,7 @@ pub mod items;
 use crate::items::Car;
 use crate::items::Item;
 use crate::items::Fox;
+use crate::items::Dog;
 use std::io::Stdin;
 use std::io::Write;
 use std::str::FromStr;
@@ -27,10 +28,9 @@ impl MarketPlace {
     fn create_item(&mut self, input: &Stdin, item_type: &str){
         match item_type {
             "Car" => {
-                let price_str = prompt(&input, "Vad är priset på bilen?");
-                let price = match price_str.trim_end().parse::<i32>() {
-                    Ok(price) => price,
-                    Err(_e) => return,
+                let price = match parse_prompt::<i32>(&input, "Hur mycket kostar bilen?") {
+                    Some(price) => price,
+                    None => return,
                 };
 
                 let motor = prompt(&input, "Vad har bilen för motor?");
@@ -42,19 +42,37 @@ impl MarketPlace {
             }
 
             "Fox" => {
-                let price_str = prompt(&input, "Vad är priset på räven?");
-                let price = match price_str.trim_end().parse::<i32>() {
-                    Ok(price) => price,
-                    Err(_e) => return,
-                };
+                let price = match parse_prompt::<i32>(&input, "Hur mycket kostar räven?") {
+                    Some(price) => price,
+                    None => return,
+                }; 
 
                 self.items.push(Box::new(Fox {
                    price 
                 }));
             }
 
+            "Dog" => {
+                let price = match parse_prompt::<i32>(&input, "Hur mycket kostar hunden?") {
+                    Some(price) => price,
+                    None => return,
+                };
+
+                let length = match parse_prompt::<i32>(&input, "Hur lång är hunden?") {
+                    Some(length) => length,
+                    None => return,
+                };
+
+                self.items.push(Box::new(Dog{
+                    price, 
+                    length: length as u32
+                }))
+
+            }
+
             &_ => {
                 println!("Okänd föremålstyp!");
+                return;
             }
         }
 
@@ -88,6 +106,10 @@ fn parse<T: FromStr>(str: &str) -> Option<T> {
             return None
         },
     };
+}
+
+fn parse_prompt<T: FromStr>(input: &Stdin, question: &str) -> Option<T> {
+    return parse::<T>(&prompt(&input, &question));
 }
 
 fn prompt(input: &Stdin, question: &str) -> String {
@@ -170,7 +192,9 @@ fn main() {
 
                 println!("Tog bort en {} från loppisen!", item.name());
             }
-            _ => {}
+            _ => {
+                println!("Okänt kommando, använd \"h\" för hjälp.");
+            }
         }
     }
 }
