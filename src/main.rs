@@ -63,11 +63,7 @@ impl MarketPlace {
                     None => return,
                 };
 
-                self.items.push(Box::new(Dog{
-                    price, 
-                    length: length as u32
-                }))
-
+                self.items.push(Box::new(Dog::new(price, length as u32)));
             }
 
             &_ => {

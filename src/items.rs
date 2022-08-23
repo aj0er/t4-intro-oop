@@ -57,7 +57,7 @@ pub struct Dog {
 }
 
 impl Dog {
-    fn new(price: i32, length: u32) -> Self {
+    pub fn new(price: i32, length: u32) -> Self {
         Self {
             price,
             length,
