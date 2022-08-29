@@ -1,10 +1,17 @@
 pub mod items;
+pub mod store; 
+
 use crate::items::Car;
 use crate::items::Item;
 use crate::items::Fox;
 use crate::items::Dog;
+use crate::store::MarketPlaceStore;
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::Read;
 use std::io::Stdin;
 use std::io::Write;
+use std::path::Path;
 use std::str::FromStr;
 
 pub struct MarketPlace {
@@ -118,10 +125,32 @@ fn prompt(input: &Stdin, question: &str) -> String {
     return line.trim_end().to_string();
 }
 
+fn read_marketplace() -> MarketPlace {
+    if Path::new("marketplace.json").exists() {
+        let mut buff = String::new();
+        let mut file = File::open("marketplace.json").expect("Kunde inte läsa marketplace filen");
+        file.read_to_string(&mut buff).unwrap();
+
+        let deserialized: MarketPlaceStore = serde_json::from_str(&buff).expect("Kunde inte deserialisera marketplace");
+        return deserialized.generate_market_place();
+    } else {
+
+        File::create("marketplace.json").expect("Marketplace kunde inte skapas");
+        OpenOptions::new()
+            .write(true)
+            .open("marketplace.json")
+            .expect("Marketplace filen kunde inte öppnas med rätt behörigheter.")
+            .write_all("[]".as_bytes())
+            .expect("Kunde inte skriva data till marketplace filen");
+
+        return MarketPlace {
+            items: vec![]
+        }
+    }
+}
+
 fn main() {
-    let mut marketplace = MarketPlace {
-        items: vec![],
-    };
+    let mut marketplace = read_marketplace();
 
     println!("Välkommen till Bosses loppis!");
     println!("Skriv \"h\" för hjälp.\n\n");
@@ -135,13 +164,16 @@ fn main() {
             "l" => {
                 marketplace.list_items();
             }
+
             "h" => {
                 println!("l - Lista alla föremål");
                 println!("a <typ> - Lägg till ett föremål");
                 println!("d <id> - Ta bort ett föremål");
                 println!("cp <id> <pris> - Ändra priset på ett föremål");
+                println!("s - Spara loppisen till fil");
                 println!(" ");
             }
+
             "a" => {
                 if args.len() != 2 {
                     continue;
@@ -149,6 +181,7 @@ fn main() {
 
                 marketplace.create_item(&input, args[1]);
             }
+
             "cp" => {
                 if args.len() != 3 {
                     continue;
@@ -187,6 +220,19 @@ fn main() {
                 };
 
                 println!("Tog bort en {} från loppisen!", item.name());
+            }
+            "s" => {
+                let store = MarketPlaceStore::from_market_place(&marketplace);
+                let mut file_save = OpenOptions::new()
+                        .write(true)
+                        .truncate(true)
+                        .open("marketplace.json")
+                        .unwrap();
+
+                file_save.write_all(serde_json::to_string(&store).unwrap().as_bytes())
+                         .expect("Kunde inte spara marketplace filen");
+
+                println!("Sparade loppisen till fil.");
             }
             _ => {
                 println!("Okänt kommando, använd \"h\" för hjälp.");
